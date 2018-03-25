@@ -8,9 +8,27 @@ import argparse
 import logging as log
 import types
 
+GCP = Fore.BLUE + "GCP" + Style.RESET_ALL
+
 
 def deep_fried_error_message(self, msg):
     self.critical(Back.WHITE + Fore.RED + msg + Style.RESET_ALL)
+
+
+def SafeTrek():
+    print('Catchphrase has been detected by GCP, contacting SafeTrek API...')
+
+
+# TODO make this asynchronous
+def handleAudio(audio):
+    try:
+        result = r.recognize_google_cloud(
+            audio, credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
+        log.info(GCP + ": " + result)
+        if args.catch_phrase in result:
+            SafeTrek()
+    except sr.UnknownValueError:
+        log.warn(GCP + " couldn't tell what you are saying.")
 
 
 ap = argparse.ArgumentParser(
@@ -19,10 +37,13 @@ ap.add_argument("-v", "--verbose", action="store_true",
                 help="Print extra debugging messages to stderr")
 ap.add_argument("--gcp", type=str, dest="gcp_key", default="private/pervalert-ef8bf59d2f9b.json",
                 help="location of the Google Cloud Platform JSON key")
+ap.add_argument("-p", "--phrase", type=str, dest="catch_phrase", default="help me",
+                help="set the trigger catch phrase (default: \"help me\")")  # TODO allow this to be defined multiple times?
 ap.add_argument("--no-report", dest="no_report", action="store_true",
                 help="skip report to front-end website on trigger")
 args = ap.parse_args()
-log.basicConfig(format="[ %(asctime)-24s] %(levelname)-8s -- %(message)s", level=log.INFO)
+log.basicConfig(
+    format="[ %(asctime)-24s] %(levelname)-8s -- %(message)s", level=log.INFO)
 log.deepFry = types.MethodType(deep_fried_error_message, log)
 if not args.verbose:
     log.getLogger(__name__).setLevel(log.ERROR)
@@ -38,29 +59,16 @@ except Exception as e:
     log.deepFry("could not read " + args.gcp_key)
     sys.exit(1)
 
-# obtain audio from the microphone
+mp = sr.Microphone()
 r = sr.Recognizer()
-with sr.Microphone() as source:
+
+with mp as microphone:
     print("Don't talk right now... r.adjust_for_ambient_noise")
-    r.adjust_for_ambient_noise(source)
-    print("Say something!")
-    audio = r.listen(source, 2, 10)
+    r.adjust_for_ambient_noise(microphone)
 
-
-try:
-    result = r.recognize_google_cloud(audio,
-                                      credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
-
-    log.debug(result) # TODO
-    
-    #if  (result == ''.join(['h', 'e', 'l', 'p']) or result == ''.join(['h', 'e', 'l', 'p', '', 'h', 'e', 'l', 'p']) or result == ''.join(['h', 'e', 'l', 'p', '', 'm', 'e'])):
-    if "help" in result:
-        print("Safetrek stuff")
-    else: 
-        print('Panic not detected')	
-
-except sr.UnknownValueError:
-    print("Google Cloud Speech could not understand audio")
-except sr.RequestError as e:
-    print("Could not request results from Google Cloud Speech service; {0}".format(e))
-
+while True:
+    with mp as microphone:
+        log.info("Listening for danger...")
+        # TODO async
+        handleAudio(r.listen(source=microphone,
+                             timeout=10, phrase_time_limit=3))
