@@ -22,7 +22,7 @@ ap.add_argument("--gcp", type=str, dest="gcp_key", default="private/pervalert-ef
 ap.add_argument("--no-report", dest="no_report", action="store_true",
                 help="skip report to front-end website on trigger")
 args = ap.parse_args()
-log.basicConfig(format="[ %(asctime)-24s] %(levelname)-8s -- %(message)s")
+log.basicConfig(format="[ %(asctime)-24s] %(levelname)-8s -- %(message)s", level=log.INFO)
 log.deepFry = types.MethodType(deep_fried_error_message, log)
 if not args.verbose:
     log.getLogger(__name__).setLevel(log.ERROR)
@@ -50,9 +50,17 @@ with sr.Microphone() as source:
 try:
     result = r.recognize_google_cloud(audio,
                                       credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
-    print("Google Cloud Speech thinks you said " + result)
+
+    log.debug(result) # TODO
+    
+    #if  (result == ''.join(['h', 'e', 'l', 'p']) or result == ''.join(['h', 'e', 'l', 'p', '', 'h', 'e', 'l', 'p']) or result == ''.join(['h', 'e', 'l', 'p', '', 'm', 'e'])):
+    if "help" in result:
+        print("Safetrek stuff")
+    else: 
+        print('Panic not detected')	
+
 except sr.UnknownValueError:
     print("Google Cloud Speech could not understand audio")
 except sr.RequestError as e:
-    print(
-        "Could not request results from Google Cloud Speech service; {0}".format(e))
+    print("Could not request results from Google Cloud Speech service; {0}".format(e))
+
