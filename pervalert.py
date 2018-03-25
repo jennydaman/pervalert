@@ -44,7 +44,7 @@ with sr.Microphone() as source:
     print("Don't talk right now... r.adjust_for_ambient_noise")
     r.adjust_for_ambient_noise(source)
     print("Say something!")
-    audio = r.listen(source,1)
+    audio = r.listen(source, 2, 10)
 
 
 try:
