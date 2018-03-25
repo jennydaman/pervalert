@@ -7,4 +7,7 @@
 - `sudo pacman -S python-pyaudio # Arch Linux`
 - `sudo apt install python3-pyaudio # Debian/Ubuntu`
 
+To install python dependencies without `sudo`: `pip install --user -r requirements.txt`
+
 You must add the pervalert *service account* JSON key from GCI to the `/private` directory.
+
